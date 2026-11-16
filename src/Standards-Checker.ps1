@@ -6,8 +6,9 @@
     Scans each project folder under E:\Created\Home (and Home\Private when the vault is unlocked)
     and checks the repo files and versions against the "Launcher & GitHub Standards Proposal":
     Source\ and Builds\ layout, README headings and badge row, CHANGELOG, MIT LICENSE,
-    build.json / launcher.json, exe names and versions, Docker files, git hygiene and the
-    GitHub About box and visibility.
+    build.json / launcher.json, builds and versions (script releases made by Build.cmd, or
+    exes for tools not yet moved off PS2EXE), Docker files, git hygiene and the GitHub About
+    box and visibility.
 
     It only reads. It never changes, creates or deletes a file, and never writes to git or GitHub.
     The only outside commands it runs are "git ls-files" / "git remote get-url" (read the repo)
@@ -16,7 +17,7 @@
     It checks repo files and version numbers only. It does not judge how an app's GUI looks:
     house style never restyles an app's GUI.
 
-    Version:   1.00 (keep in step with CHANGELOG.md)
+    Version:   1.01 (keep in step with CHANGELOG.md)
 
 .PARAMETER Root
     The Home folder to scan. Default: E:\Created\Home
@@ -67,7 +68,7 @@ param(
 Set-StrictMode -Version 2.0
 $ErrorActionPreference = 'Stop'
 
-$script:AppVersion = '1.00'
+$script:AppVersion = '1.01'
 $script:GitHubOwner = 'jason4bury'
 $script:CopyrightName = 'Jason Rhodes'
 
@@ -390,7 +391,7 @@ function Test-Git {
 }
 
 # ---------------------------------------------------------------------------------------------
-# build.json, launcher.json, exe names and script version (PowerShell tools)
+# build.json, launcher.json, builds and script version (PowerShell tools)
 # ---------------------------------------------------------------------------------------------
 function Test-Build {
     param([string]$Name, [string]$ProjectPath, [string]$Source, [string]$ChangelogVersion)
@@ -445,29 +446,101 @@ function Test-Build {
 
     # --- Builds\ ---------------------------------------------------------------------------
     $builds = Join-Path $ProjectPath 'Builds'
-    if (-not (Test-Path -LiteralPath $builds -PathType Container)) { return $build }
-    $exeFiles = @(Get-ChildItem -LiteralPath $builds -Filter *.exe -File -ErrorAction SilentlyContinue)
-    Test-Rule $Name 'Exe' 'Builds\ has at least one exe' ($exeFiles.Count -gt 0) 'No exe in Builds\'
-    if ($exeFiles.Count -eq 0 -or -not $appName) { return $build }
+    $release = Get-Prop $build 'Release'
+    if ($release) { Test-Release $Name $Source $builds $build $appName $ChangelogVersion }
+    elseif (Test-Path -LiteralPath $builds -PathType Container) { Test-Exe $Name $builds $appName $ChangelogVersion }
+    $build
+}
 
-    $pattern = '^' + [regex]::Escape($appName) + ' v(' + $script:VersionText + ')\.exe$'
+function Test-Exe {
+    <# A tool still built as an exe (PS2EXE or a compiled starter). #>
+    param([string]$Name, [string]$Builds, [string]$AppName, [string]$ChangelogVersion)
+    Add-Result $Name 'Exe' 'Build type' 'WARN' 'Exe build. Home tools are moving to script releases (Build.cmd, no exe) because antivirus flags PS2EXE exes'
+    $exeFiles = @(Get-ChildItem -LiteralPath $Builds -Filter *.exe -File -ErrorAction SilentlyContinue)
+    Test-Rule $Name 'Exe' 'Builds\ has at least one exe' ($exeFiles.Count -gt 0) 'No exe in Builds\'
+    if ($exeFiles.Count -eq 0 -or -not $AppName) { return }
+
+    $pattern = '^' + [regex]::Escape($AppName) + ' v(' + $script:VersionText + ')\.exe$'
     $badNames = @($exeFiles | Where-Object { $_.Name -notmatch $pattern } | ForEach-Object Name)
-    Test-Rule $Name 'Exe' "Exe names follow '<App Name> v<x.yy>.exe'" ($badNames.Count -eq 0) ("Not matching '$appName vX.YY.exe': " + ($badNames -join ', '))
+    Test-Rule $Name 'Exe' "Exe names follow '<App Name> v<x.yy>.exe'" ($badNames.Count -eq 0) ("Not matching '$AppName vX.YY.exe': " + ($badNames -join ', '))
 
     $named = @($exeFiles | Where-Object { $_.Name -match $pattern } | ForEach-Object {
         $null = $_.Name -match $pattern; [pscustomobject]@{ Name = $_.Name; Ver = ConvertTo-Ver $Matches[1]; Text = $Matches[1] } })
     if ($ChangelogVersion) {
-        $wanted = "$appName v$ChangelogVersion.exe"
-        Test-Rule $Name 'Exe' 'Exe for the CHANGELOG version is in Builds\' (Test-Path -LiteralPath (Join-Path $builds $wanted)) "Missing: $wanted" $wanted
+        $wanted = "$AppName v$ChangelogVersion.exe"
+        Test-Rule $Name 'Exe' 'Exe for the CHANGELOG version is in Builds\' (Test-Path -LiteralPath (Join-Path $Builds $wanted)) "Missing: $wanted" $wanted
         if ($named.Count -gt 0) {
             $top = $named | Sort-Object Ver -Descending | Select-Object -First 1
             Test-Rule $Name 'Exe' 'Newest exe matches the CHANGELOG version' ($top.Ver -eq (ConvertTo-Ver $ChangelogVersion)) `
                 "Newest exe is $($top.Name), CHANGELOG is v$ChangelogVersion"
         }
     }
-    $others = @(Get-ChildItem -LiteralPath $builds -Force -ErrorAction SilentlyContinue | Where-Object { $_.Extension -ne '.exe' })
+    $others = @(Get-ChildItem -LiteralPath $Builds -Force -ErrorAction SilentlyContinue | Where-Object { $_.Extension -ne '.exe' })
     if ($others.Count -gt 0) { Add-Result $Name 'Exe' 'Only exe files in Builds\' 'INFO' ("Also there: " + ($others.Name -join ', ')) }
-    $build
+}
+
+function Test-Release {
+    <# A script tool with no exe (the Homelab model): build.json's Release lists the files,
+       Build.cmd copies them to Builds\<App Name> v<x.yy>\, zips that folder as
+       <App-Name>-v<x.yy>.zip and points Builds\<App Name>.lnk at it for the Home Launcher. #>
+    param([string]$Name, [string]$Source, [string]$Builds, [object]$Build, [string]$AppName, [string]$ChangelogVersion)
+    $area = 'Release'
+    Add-Result $Name $area 'Build type' 'INFO' 'Script release (no exe)'
+
+    # --- build.json Release section ---
+    $release = Get-Prop $Build 'Release'
+    $files = Get-Prop $release 'Files'
+    $fileProps = @(if ($files -and $files -isnot [string]) { $files.PSObject.Properties })
+    Test-Rule $Name $area 'build.json Release.Files lists the release files' ($fileProps.Count -gt 0) 'Release.Files is missing or empty'
+    $missing = @($fileProps | Where-Object { -not (Test-Path -LiteralPath (Join-Path $Source ([string]$_.Value)) -PathType Leaf) } | ForEach-Object { [string]$_.Value })
+    if ($fileProps.Count -gt 0) {
+        Test-Rule $Name $area 'Every Release.Files source exists' ($missing.Count -eq 0) ("Not found: " + ($missing -join ', '))
+        $entry = Get-Prop $Build 'EntryScript'
+        if ($entry) {
+            $shipsEntry = @($fileProps | Where-Object { ([string]$_.Value) -eq $entry }).Count -gt 0
+            Test-Rule $Name $area 'Release ships the EntryScript' $shipsEntry "Release.Files doesn't include $entry"
+        }
+        foreach ($f in 'README.md', 'CHANGELOG.md', 'LICENSE') {
+            $ships = @($fileProps | Where-Object { $_.Name -eq $f }).Count -gt 0
+            Test-Rule $Name $area "Release ships $f" $ships "Release.Files doesn't include $f" -FailStatus 'WARN'
+        }
+    }
+    $shortcut = [string](Get-Prop $release 'Shortcut')
+    Test-Rule $Name $area 'build.json Release.Shortcut names the shortcut maker' ([bool]$shortcut) 'Release.Shortcut is missing'
+    if ($shortcut -and $fileProps.Count -gt 0) {
+        Test-Rule $Name $area 'The shortcut maker is in the release' (@($fileProps | Where-Object { $_.Name -eq $shortcut }).Count -gt 0) "Release.Files doesn't include $shortcut"
+    }
+    $cmds = @($fileProps | Where-Object { $_.Name -match '(?i)^[^\\/]+\.cmd$' })
+    Test-Rule $Name $area 'Release has a .cmd to start it' ($cmds.Count -gt 0) 'No .cmd at the top of Release.Files' -FailStatus 'WARN'
+    $exeKeys = @('Ps2exe', 'Bundle', 'EmbedAssets', 'Builder') | Where-Object { $null -ne (Get-Prop $Build $_) }
+    Test-Rule $Name $area 'build.json has no exe settings left' (@($exeKeys).Count -eq 0) ("Still there: " + (@($exeKeys) -join ', ')) -FailStatus 'WARN'
+
+    # --- Build scripts in Source\ ---
+    Test-Rule $Name $area 'Build.cmd in Source\' (Test-Path -LiteralPath (Join-Path $Source 'Build.cmd') -PathType Leaf) 'Build.cmd is missing'
+    $oldBuilders = @('Build-Exe.cmd', 'Build-Exe.ps1', 'tools\Build-Exe.ps1') | Where-Object { Test-Path -LiteralPath (Join-Path $Source $_) -PathType Leaf }
+    Test-Rule $Name $area 'No exe build script left in Source\' (@($oldBuilders).Count -eq 0) ("Still there: " + (@($oldBuilders) -join ', ')) -FailStatus 'WARN'
+
+    # --- Builds\ ---
+    if (-not (Test-Path -LiteralPath $Builds -PathType Container) -or -not $AppName) { return }
+    $pattern = '^' + [regex]::Escape($AppName) + ' v(' + $script:VersionText + ')$'
+    $folders = @(Get-ChildItem -LiteralPath $Builds -Directory -ErrorAction SilentlyContinue | Where-Object { $_.Name -match $pattern } | ForEach-Object {
+        $null = $_.Name -match $pattern; [pscustomobject]@{ Name = $_.Name; Ver = ConvertTo-Ver $Matches[1]; Text = $Matches[1] } })
+    Test-Rule $Name $area "Builds\ has a '<App Name> v<x.yy>' release folder" ($folders.Count -gt 0) "No '$AppName vX.YY' folder in Builds\ (run Build.cmd)"
+    if ($ChangelogVersion) {
+        $wanted = "$AppName v$ChangelogVersion"
+        Test-Rule $Name $area 'Release folder for the CHANGELOG version is in Builds\' (Test-Path -LiteralPath (Join-Path $Builds $wanted) -PathType Container) "Missing: $wanted" $wanted
+        if ($folders.Count -gt 0) {
+            $top = $folders | Sort-Object Ver -Descending | Select-Object -First 1
+            Test-Rule $Name $area 'Newest release folder matches the CHANGELOG version' ($top.Ver -eq (ConvertTo-Ver $ChangelogVersion)) `
+                "Newest is $($top.Name), CHANGELOG is v$ChangelogVersion"
+        }
+        $zip = "$($AppName -replace '\s+', '-')-v$ChangelogVersion.zip"
+        Test-Rule $Name $area 'Release zip for the CHANGELOG version is in Builds\' (Test-Path -LiteralPath (Join-Path $Builds $zip) -PathType Leaf) "Missing: $zip" $zip -FailStatus 'WARN'
+    }
+    $lnk = "$AppName.lnk"
+    Test-Rule $Name $area "Builds\$lnk for the Home Launcher" (Test-Path -LiteralPath (Join-Path $Builds $lnk) -PathType Leaf) "Missing: $lnk (Build.cmd makes it)"
+    $exes = @(Get-ChildItem -LiteralPath $Builds -Filter *.exe -File -ErrorAction SilentlyContinue)
+    Test-Rule $Name $area 'No old exe left in Builds\' ($exes.Count -eq 0) ("Antivirus may flag these: " + (($exes | ForEach-Object Name) -join ', ')) -FailStatus 'WARN'
 }
 
 function Test-Launcher {

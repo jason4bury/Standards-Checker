@@ -2,7 +2,7 @@
 
 A read-only PowerShell report that checks every Home tool against the house style and says what passes and what doesn't.
 
-![Version](https://img.shields.io/badge/version-v1.00-blue)
+![Version](https://img.shields.io/badge/version-v1.01-blue)
 ![Platform](https://img.shields.io/badge/platform-Windows-0078D6?logo=windows)
 ![PowerShell](https://img.shields.io/badge/PowerShell-5.1%20%7C%207-5391FE?logo=powershell&logoColor=white)
 ![Licence](https://img.shields.io/badge/licence-MIT-green)
@@ -25,12 +25,13 @@ What it checks for each tool:
 | LICENSE | MIT, `Copyright (c) <year> Jason Rhodes` |
 | Git | `Source\` is a repo, `.gitignore` covers `*.exe`, `config.local.json`, `*.log` (when logs exist), `.env` and `node_modules` (Docker apps), no exe in `Source\`, no exe, `.env` or `config.local.json` tracked |
 | Build | `build.json` with AppName, EntryScript and Icon that exist, folder and main script named after the app, script version matches the CHANGELOG |
-| Exe | Exe names are `<App Name> v<x.yy>.exe`, the exe for the CHANGELOG version is in `Builds\`, the newest exe matches the CHANGELOG |
+| Release | Script tools with no exe (`build.json` has a `Release` section): the release files exist and include the main script, README, CHANGELOG, LICENSE, the shortcut maker and a start `.cmd`; `Build.cmd` is there and no exe build script or exe settings are left; `Builds\` has `<App Name> v<x.yy>\` for the CHANGELOG version (the newest), its zip, `<App Name>.lnk` for the Home Launcher, and no old exes |
+| Exe | Tools still built as an exe (a WARN, since antivirus flags PS2EXE exes): exe names are `<App Name> v<x.yy>.exe`, the exe for the CHANGELOG version is in `Builds\`, the newest exe matches the CHANGELOG |
 | Docker | `docker-compose.yml`, `Dockerfile` pinned to an exact Node.js version, `.env.example`, `package.json` version matches the CHANGELOG |
 | Launcher | `launcher.json` is valid JSON when present (it's optional) |
 | GitHub | origin remote, repo name matches the folder, About description present and in the `<Language>/<UI> tool for ...` form, matches `build.json` Description, topics set, private tools have a PRIVATE repo |
 
-Docker apps are recognised by `docker-compose.yml` and skip the exe and `build.json` rules.
+Docker apps are recognised by `docker-compose.yml` and skip the release, exe and `build.json` rules.
 
 ## 📋 Requirements
 
