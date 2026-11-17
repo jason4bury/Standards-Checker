@@ -2,7 +2,7 @@
 
 A read-only PowerShell report that checks every Home tool against the house style and says what passes and what doesn't.
 
-![Version](https://img.shields.io/badge/version-v1.01-blue)
+![Version](https://img.shields.io/badge/version-v1.02-blue)
 ![Platform](https://img.shields.io/badge/platform-Windows-0078D6?logo=windows)
 ![PowerShell](https://img.shields.io/badge/PowerShell-5.1%20%7C%207-5391FE?logo=powershell&logoColor=white)
 ![Licence](https://img.shields.io/badge/licence-MIT-green)
@@ -29,7 +29,7 @@ What it checks for each tool:
 | Exe | Tools still built as an exe (a WARN, since antivirus flags PS2EXE exes): exe names are `<App Name> v<x.yy>.exe`, the exe for the CHANGELOG version is in `Builds\`, the newest exe matches the CHANGELOG |
 | Docker | `docker-compose.yml`, `Dockerfile` pinned to an exact Node.js version, `.env.example`, `package.json` version matches the CHANGELOG |
 | Launcher | `launcher.json` is valid JSON when present (it's optional) |
-| GitHub | origin remote, repo name matches the folder, About description present and in the `<Language>/<UI> tool for ...` form, matches `build.json` Description, topics set, private tools have a PRIVATE repo |
+| GitHub | origin remote (a tool not on GitHub yet gets a FAIL, not a crash), repo name matches the folder, About description present and in the `<Language>/<UI> tool for ...` form, matches `build.json` Description, topics set, private tools have a PRIVATE repo |
 
 Docker apps are recognised by `docker-compose.yml` and skip the release, exe and `build.json` rules.
 

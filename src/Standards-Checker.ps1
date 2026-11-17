@@ -17,7 +17,7 @@
     It checks repo files and version numbers only. It does not judge how an app's GUI looks:
     house style never restyles an app's GUI.
 
-    Version:   1.01 (keep in step with CHANGELOG.md)
+    Version:   1.02 (keep in step with CHANGELOG.md)
 
 .PARAMETER Root
     The Home folder to scan. Default: E:\Created\Home
@@ -68,7 +68,7 @@ param(
 Set-StrictMode -Version 2.0
 $ErrorActionPreference = 'Stop'
 
-$script:AppVersion = '1.01'
+$script:AppVersion = '1.02'
 $script:GitHubOwner = 'jason4bury'
 $script:CopyrightName = 'Jason Rhodes'
 
@@ -160,13 +160,22 @@ function ConvertTo-Ver([string]$Text) {
     $null
 }
 
+# Runs a read-only outside command (git or gh) and returns its output lines, or $null when it
+# fails. Windows PowerShell 5.1 turns anything a native command writes to stderr into a
+# terminating error while $ErrorActionPreference is 'Stop' (e.g. git's "No such remote 'origin'"
+# on a repo that isn't on GitHub yet), so stderr is dropped with 'Continue' set for this call only.
+function Invoke-NativeRead([string]$Exe, [string[]]$NativeArgs) {
+    $ErrorActionPreference = 'Continue'
+    try { $out = & $Exe @NativeArgs 2>$null } catch { return $null }
+    if ($LASTEXITCODE -ne 0) { return $null }
+    @($out)
+}
+
 # Runs git against a repo without changing it. -c safe.directory avoids the
 # "dubious ownership" stop on drives formatted by another user; it is not saved anywhere.
 function Invoke-GitRead([string]$Repo, [string[]]$GitArgs) {
     if (-not $script:HasGit) { return $null }
-    $out = & git -c safe.directory=* -C $Repo @GitArgs 2>$null
-    if ($LASTEXITCODE -ne 0) { return $null }
-    @($out)
+    Invoke-NativeRead 'git' (@('-c', 'safe.directory=*', '-C', $Repo) + $GitArgs)
 }
 
 function Get-PlainText([string]$Text) { $Text -replace [char]0xFE0F, '' }
@@ -593,8 +602,8 @@ function Get-RepoInfo {
     if ($Offline)                { $result.Why = '-Offline'; return $result }
     if (-not $script:HasGh)      { $result.Why = 'gh is not installed or not signed in'; return $result }
     if (-not $result.Repo)       { $result.Why = 'no GitHub remote'; return $result }
-    $json = & gh repo view $result.Repo --json description,visibility,repositoryTopics 2>$null
-    if ($LASTEXITCODE -ne 0 -or -not $json) { $result.Why = "gh could not read $($result.Repo)"; return $result }
+    $json = Invoke-NativeRead 'gh' @('repo', 'view', $result.Repo, '--json', 'description,visibility,repositoryTopics')
+    if (-not $json) { $result.Why = "gh could not read $($result.Repo)"; return $result }
     $result.Info = ($json -join "`n") | ConvertFrom-Json
     $result
 }
@@ -604,7 +613,7 @@ function Test-GitHub {
     $area = 'GitHub'
 
     $repo = $Gh.Repo
-    Test-Rule $Name $area 'origin points at a GitHub repo' ([bool]$repo) 'No GitHub origin remote' "$repo"
+    Test-Rule $Name $area 'origin points at a GitHub repo' ([bool]$repo) 'No GitHub origin remote yet (create the repo and push, then check again)' "$repo"
     if ($repo) {
         Test-Rule $Name $area 'Repo name matches the folder' (($repo -split '/')[1] -eq $Name) "Repo is $repo, folder is $Name"
     }
@@ -737,8 +746,8 @@ function Write-Report {
 $script:HasGit = [bool](Get-Command git -ErrorAction SilentlyContinue)
 $script:HasGh = $false
 if (-not $Offline -and (Get-Command gh -ErrorAction SilentlyContinue)) {
-    $null = & gh auth status 2>&1
-    $script:HasGh = ($LASTEXITCODE -eq 0)
+    # Exit code only (older gh prints the sign-in status to stderr); 'Continue' as in Invoke-NativeRead.
+    $script:HasGh = & { $ErrorActionPreference = 'Continue'; $null = & gh auth status 2>&1; $LASTEXITCODE -eq 0 }
 }
 
 Write-Host "Standards Checker v$($script:AppVersion) - read only, nothing is changed" -ForegroundColor White
