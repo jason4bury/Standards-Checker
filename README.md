@@ -2,7 +2,7 @@
 
 A read-only PowerShell report that checks every Home tool against the house style and says what passes and what doesn't.
 
-![Version](https://img.shields.io/badge/version-v1.02-blue)
+![Version](https://img.shields.io/badge/version-v1.03-blue)
 ![Platform](https://img.shields.io/badge/platform-Windows-0078D6?logo=windows)
 ![PowerShell](https://img.shields.io/badge/PowerShell-5.1%20%7C%207-5391FE?logo=powershell&logoColor=white)
 ![Licence](https://img.shields.io/badge/licence-MIT-green)
@@ -19,7 +19,7 @@ What it checks for each tool:
 
 | Area | Rules |
 | --- | --- |
-| Layout | `Source\` and `Builds\` folders, `src\` `docs\` `assets\`, Title-Case-With-Hyphens folder name, anything else in the project folder |
+| Layout | `Source\` and `Builds\` folders, `src\` `docs\` `assets\`, Title-Case-With-Hyphens folder name (small joining words such as `and` may be lower case), anything else in the project folder |
 | README | H1 title, tagline, badge row directly under the tagline, badge order (version, platform, language, licence, last commit), **no Last-commit badge on private repos**, version badge matches the CHANGELOG, every H2 has its emoji, sections in house order, link to CHANGELOG.md |
 | CHANGELOG | Present, `# Changelog`, `[Unreleased]`, entries as `## [x.yy] - YYYY-MM-DD`, newest first, current version |
 | LICENSE | MIT, `Copyright (c) <year> Jason Rhodes` |

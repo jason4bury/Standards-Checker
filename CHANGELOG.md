@@ -6,6 +6,13 @@ v<major>.<minor>.
 
 ## [Unreleased]
 
+## [1.03] - 2026-11-17
+### Changed
+- **Small joining words allowed in folder names.** The Title-Case-With-Hyphens folder rule now
+  accepts the lower-case words `and`, `of`, `the`, `for`, `to`, `in` and `on` as whole parts between
+  capitalised parts (never first or last), so a folder named from an AppName such as
+  "Disk and NAS Health" (`Disk-and-NAS-Health`) passes. Everything else is unchanged.
+
 ## [1.02] - 2026-11-17
 ### Fixed
 - **No more crash on a new tool that isn't on GitHub yet.** Under Windows PowerShell 5.1 the

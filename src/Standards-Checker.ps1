@@ -17,7 +17,7 @@
     It checks repo files and version numbers only. It does not judge how an app's GUI looks:
     house style never restyles an app's GUI.
 
-    Version:   1.02 (keep in step with CHANGELOG.md)
+    Version:   1.03 (keep in step with CHANGELOG.md)
 
 .PARAMETER Root
     The Home folder to scan. Default: E:\Created\Home
@@ -68,7 +68,7 @@ param(
 Set-StrictMode -Version 2.0
 $ErrorActionPreference = 'Stop'
 
-$script:AppVersion = '1.02'
+$script:AppVersion = '1.03'
 $script:GitHubOwner = 'jason4bury'
 $script:CopyrightName = 'Jason Rhodes'
 
@@ -96,7 +96,9 @@ $script:BadgeOrder = @('version', 'platform', 'language', 'licence', 'last commi
 $script:LanguageBadges = 'powershell|python|node\.?js|javascript|typescript|c#|csharp'
 
 # Folder / repo / script names: Title-Case-With-Hyphens (MP3 and similar all-caps parts allowed).
-$script:TitleCaseName = '^[A-Z0-9][A-Za-z0-9]*(-[A-Z0-9][A-Za-z0-9]*)*$'
+# Small joining words (and, of, the, for, to, in, on) may sit lower-case between capitalised parts,
+# never first or last: Disk-and-NAS-Health is fine, and-Disk or Disk-and is not.
+$script:TitleCaseName = '^[A-Z0-9][A-Za-z0-9]*(-((and|of|the|for|to|in|on)-)*[A-Z0-9][A-Za-z0-9]*)*$'
 # Versions: v<major>.<two-digit minor>
 $script:VersionText = '\d+\.\d{2}'
 # About box: "<Language>/<UI> tool for <what it does>"
