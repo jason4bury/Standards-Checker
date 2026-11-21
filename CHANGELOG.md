@@ -6,6 +6,12 @@ v<major>.<minor>.
 
 ## [Unreleased]
 
+## [1.04] - 2026-11-21
+### Added
+- **Standards Checker.cmd** runs the checker in a console window and waits for a key, so the results
+  stay on screen. Arguments are passed on. The Home Launcher starts it from its Utilities
+  section, which `launcher.json` sets.
+
 ## [1.03] - 2026-11-17
 ### Changed
 - **Small joining words allowed in folder names.** The Title-Case-With-Hyphens folder rule now

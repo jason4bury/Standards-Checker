@@ -2,7 +2,7 @@
 
 A read-only PowerShell report that checks every Home tool against the house style and says what passes and what doesn't.
 
-![Version](https://img.shields.io/badge/version-v1.03-blue)
+![Version](https://img.shields.io/badge/version-v1.04-blue)
 ![Platform](https://img.shields.io/badge/platform-Windows-0078D6?logo=windows)
 ![PowerShell](https://img.shields.io/badge/PowerShell-5.1%20%7C%207-5391FE?logo=powershell&logoColor=white)
 ![Licence](https://img.shields.io/badge/licence-MIT-green)
@@ -41,7 +41,7 @@ Docker apps are recognised by `docker-compose.yml` and skip the release, exe and
 
 ## 📦 Installation
 
-Nothing to install. Keep the repo at `E:\Created\_shared\Standards-Checker\Source` and run the script from `src\`.
+Nothing to install. Keep the repo at `E:\Created\_shared\Standards-Checker\Source` and run the script from `src\`, or double-click **Standards Checker.cmd**, which runs it and keeps the window open. The Home Launcher lists it under Utilities.
 
 ## 🚀 Usage
 

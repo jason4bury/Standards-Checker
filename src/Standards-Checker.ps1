@@ -17,7 +17,7 @@
     It checks repo files and version numbers only. It does not judge how an app's GUI looks:
     house style never restyles an app's GUI.
 
-    Version:   1.03 (keep in step with CHANGELOG.md)
+    Version:   1.04 (keep in step with CHANGELOG.md)
 
 .PARAMETER Root
     The Home folder to scan. Default: E:\Created\Home
@@ -68,7 +68,7 @@ param(
 Set-StrictMode -Version 2.0
 $ErrorActionPreference = 'Stop'
 
-$script:AppVersion = '1.03'
+$script:AppVersion = '1.04'
 $script:GitHubOwner = 'jason4bury'
 $script:CopyrightName = 'Jason Rhodes'
 
