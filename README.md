@@ -2,7 +2,7 @@
 
 A read-only PowerShell report that checks every Home tool against the house style and says what passes and what doesn't.
 
-![Version](https://img.shields.io/badge/version-v1.04-blue)
+![Version](https://img.shields.io/badge/version-v1.05-blue)
 ![Platform](https://img.shields.io/badge/platform-Windows-0078D6?logo=windows)
 ![PowerShell](https://img.shields.io/badge/PowerShell-5.1%20%7C%207-5391FE?logo=powershell&logoColor=white)
 ![Licence](https://img.shields.io/badge/licence-MIT-green)
@@ -10,7 +10,7 @@ A read-only PowerShell report that checks every Home tool against the house styl
 
 ## ✨ Features
 
-- Scans every project under `E:\Created\Home` and, when the vault is unlocked, `Home\Private`. If `Home\Private` is locked it says so and carries on.
+- Scans every project in your Home folder (the `Home` folder beside the `_shared` folder it is kept in, or one you give with `-Root`) and, when the vault is unlocked, `Home\Private`. If `Home\Private` is locked it says so and carries on.
 - **Read only.** It never creates, changes or deletes a file and never writes to git or GitHub. The only file it can write is the CSV you ask for with `-CsvPath`.
 - Gives every rule a **PASS**, **FAIL**, **WARN**, **INFO** or **SKIP**, grouped by tool, with a summary table at the end.
 - Checks repo files and version numbers only. It never judges how an app's GUI looks, because the house style never restyles an app's GUI.
@@ -41,7 +41,7 @@ Docker apps are recognised by `docker-compose.yml` and skip the release, exe and
 
 ## 📦 Installation
 
-Nothing to install. Keep the repo at `E:\Created\_shared\Standards-Checker\Source` and run the script from `src\`, or double-click **Standards Checker.cmd**, which runs it and keeps the window open. The Home Launcher lists it under Utilities.
+Nothing to install. Keep the repo in `<your tools folder>\_shared\Standards-Checker\Source` (beside your `Home` folder) and run the script from `src\`, or double-click **Standards Checker.cmd**, which runs it and keeps the window open. The Home Launcher lists it under Utilities.
 
 ## 🚀 Usage
 
@@ -62,9 +62,10 @@ Nothing to install. Keep the repo at `E:\Created\_shared\Standards-Checker\Sourc
 
 | Parameter | What it does |
 | --- | --- |
-| `-Root <folder>` | Home folder to scan. Default `E:\Created\Home`. |
+| `-Root <folder>` | Home folder to scan. Default: the `Home` folder beside `_shared`, else the current folder. |
+| `-CopyrightName <name>` | The name the LICENSE copyright line must show. Default: your git `user.name`. |
 | `-Tool <wildcard>` | Only tools whose folder name matches. |
-| `-IncludeShared` | Also check the repos in `E:\Created\_shared`. |
+| `-IncludeShared` | Also check the repos in the `_shared` folder beside the Home folder. |
 | `-Offline` | Skip the GitHub checks. |
 | `-FailuresOnly` | Only show FAIL and WARN lines. |
 | `-CsvPath <file>` | Also save every result to a CSV file. |

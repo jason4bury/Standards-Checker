@@ -6,6 +6,13 @@ v<major>.<minor>.
 
 ## [Unreleased]
 
+## [1.05] - 2026-11-21
+### Changed
+- **Works from any folder.** The Home folder to check is no longer fixed: it is the `Home` folder
+  beside the `_shared` folder the checker is kept in (or `-Root`), else the current folder.
+- **New `-CopyrightName`** for the LICENSE rule; by default it is your git `user.name`.
+- The help example uses `TV-*`.
+
 ## [1.04] - 2026-11-21
 ### Added
 - **Standards Checker.cmd** runs the checker in a console window and waits for a key, so the results

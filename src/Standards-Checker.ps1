@@ -3,7 +3,7 @@
     Checks every Home tool against the Launcher & GitHub house style and reports pass/fail per rule.
 
 .DESCRIPTION
-    Scans each project folder under E:\Created\Home (and Home\Private when the vault is unlocked)
+    Scans each project folder under your Home folder (and Home\Private when the vault is unlocked)
     and checks the repo files and versions against the "Launcher & GitHub Standards Proposal":
     Source\ and Builds\ layout, README headings and badge row, CHANGELOG, MIT LICENSE,
     build.json / launcher.json, builds and versions (script releases made by Build.cmd, or
@@ -17,16 +17,21 @@
     It checks repo files and version numbers only. It does not judge how an app's GUI looks:
     house style never restyles an app's GUI.
 
-    Version:   1.04 (keep in step with CHANGELOG.md)
+    Version:   1.05 (keep in step with CHANGELOG.md)
 
 .PARAMETER Root
-    The Home folder to scan. Default: E:\Created\Home
+    The Home folder to scan (the folder that holds the tool folders). Default: the Home folder
+    beside the _shared folder this script is kept in, for example C:\Tools\Home when the script is
+    in C:\Tools\_shared\Standards-Checker\Source\src; else the current folder.
+
+.PARAMETER CopyrightName
+    The name the LICENSE copyright line must show. Default: your git user.name.
 
 .PARAMETER Tool
     Only check tools whose folder name matches this wildcard, e.g. "TV-*".
 
 .PARAMETER IncludeShared
-    Also check repos under E:\Created\_shared (e.g. Launcher-Engine).
+    Also check repos in the _shared folder beside the Home folder (e.g. Launcher-Engine).
 
 .PARAMETER Offline
     Skip the GitHub checks (About box, topics, visibility).
@@ -45,7 +50,7 @@
     .\Standards-Checker.ps1
 
 .EXAMPLE
-    .\Standards-Checker.ps1 -Tool "Stash-*" -FailuresOnly
+    .\Standards-Checker.ps1 -Tool "TV-*" -FailuresOnly
 
 .EXAMPLE
     .\Standards-Checker.ps1 -CsvPath "$env:USERPROFILE\Desktop\standards.csv"
@@ -56,7 +61,8 @@
 #>
 [CmdletBinding()]
 param(
-    [string]$Root = 'E:\Created\Home',
+    [string]$Root,
+    [string]$CopyrightName,
     [string]$Tool = '*',
     [switch]$IncludeShared,
     [switch]$Offline,
@@ -68,9 +74,15 @@ param(
 Set-StrictMode -Version 2.0
 $ErrorActionPreference = 'Stop'
 
-$script:AppVersion = '1.04'
-$script:GitHubOwner = 'jason4bury'
-$script:CopyrightName = 'Jason Rhodes'
+$script:AppVersion = '1.05'
+# Where to look and whose name the LICENSE must carry: nothing is tied to one PC.
+if (-not $Root) {
+    $shared = Split-Path -Parent (Split-Path -Parent (Split-Path -Parent $PSScriptRoot))   # ...\_shared
+    $guess = Join-Path (Split-Path -Parent $shared) 'Home'
+    $Root = if ((Split-Path -Leaf $shared) -eq '_shared' -and (Test-Path -LiteralPath $guess -PathType Container)) { $guess } else { (Get-Location).Path }
+}
+$script:CopyrightName = if ($CopyrightName) { $CopyrightName } else { try { [string](& git config --global user.name 2>$null) } catch { '' } }
+if (-not $script:CopyrightName) { $script:CopyrightName = 'Your Name' }
 
 # ---------------------------------------------------------------------------------------------
 # House-style constants
